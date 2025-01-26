@@ -1,44 +1,30 @@
 package lk.ijse.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
+@Table(name = "categories")
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 public class Category {
-
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int categoryId;
-    private String categoryName;
 
-    public Category() {
-    }
+    private String name;
 
-    public Category(int categoryId, String categoryName) {
-        this.categoryId = categoryId;
-        this.categoryName = categoryName;
-    }
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Product> products = new ArrayList<>();
 
-    public int getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
-    }
-
-    @Override
-    public String toString() {
-        return "Category{" +
-                "categoryId=" + categoryId +
-                ", categoryName='" + categoryName + '\'' +
-                '}';
-    }
+    // Getters and setters
 }

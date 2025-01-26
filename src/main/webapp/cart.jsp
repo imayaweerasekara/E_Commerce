@@ -1,108 +1,30 @@
 
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.Objects" %>
 <%@ page import="java.util.List" %>
-<%@ page import="lk.ijse.DTO.CategoryDTO" %>
 <%@ page import="lk.ijse.DAO.UserDAO" %>
 <%@ page import="lk.ijse.DAO.DAOFactory" %>
 <%@ page import="lk.ijse.DAO.LoginDAO" %>
 <%@ page import="lk.ijse.Entity.Login" %>
 <%@ page import="lk.ijse.Entity.User" %>
+<%@ page import="lk.ijse.DTO.CartDTO" %>
+
 <%
+    List<CartDTO> cartList = (List<CartDTO>) request.getAttribute("cartList");
     String alertType = (String) request.getAttribute("alertType");
     String alertMessage = (String) request.getAttribute("alertMessage");
-    List<CategoryDTO> dataList = (List<CategoryDTO>) request.getAttribute("categories");
     UserDAO userDAO = (UserDAO) DAOFactory.getDaoFactory().getDAO(DAOFactory.DaoType.User);
     LoginDAO loginDAO = (LoginDAO) DAOFactory.getDaoFactory().getDAO(DAOFactory.DaoType.Login);
     Login login = loginDAO.getLastLogin();
     User user = userDAO.searchByEmail(login.getUserMail());
-
-
-
 %>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Category Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
 
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Arial', sans-serif;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
-        }
-
-        .alert {
-            margin-top: 20px;
-        }
-
-        .table th, .table td {
-            vertical-align: middle;
-        }
-
-        .table td {
-            text-align: center;
-        }
-
-        .btn-sm {
-            font-size: 0.875rem;
-        }
-
-        .btn-warning, .btn-danger {
-            display: inline-flex;
-            align-items: center;
-        }
-
-        .btn-warning i, .btn-danger i {
-            margin-right: 5px;
-        }
-
-        .table-striped tbody tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        /* Button Styles */
-        .btn-custom {
-            margin-right: 10px;
-        }
-
-        .table-responsive {
-            margin-top: 30px;
-        }
-
-        .table-header {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        /* Alert box */
-        .alert-info {
-            color: #0d6efd;
-        }
-
-        .alert-success {
-            color: #198754;
-        }
-
-        .alert-danger {
-            color: #dc3545;
-        }
-
-        .alert-warning {
-            color: #ffc107;
-        }
-
-    </style>
+    <title>Cart List</title>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -123,7 +45,7 @@
                 <li class="nav-item"><a class="nav-link" href="UserDelete.jsp">Account</a></li>
                 <li class="nav-item"><a class="nav-link" href="index.jsp">Log out</a></li>
             </ul>
-                <%} else if (user.getRole().equals("Customer")) {%>
+            <%} else if (user.getRole().equals("Customer")) {%>
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link active" href="${pageContext.request.contextPath}/homeProduct">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="${pageContext.request.contextPath}/CheckoutServlet">Cart</a></li>
@@ -132,7 +54,6 @@
                 <li class="nav-item"><a class="nav-link" href="index.jsp">Log out</a></li>
             </ul>
             <%}%>
-
             <form class="d-flex" action="" method="get">
                 <input class="form-control me-2" type="search" name="query" placeholder="Search" aria-label="Search" required>
                 <button class="btn btn-outline-success" type="submit">Search</button>
@@ -140,62 +61,81 @@
         </div>
     </div>
 </nav>
-<div class="container">
-    <h3 class="text-center mb-4">Category List</h3>
+<div class="container mt-5">
+    <h1 class="text-center">Your Cart</h1>
 
-    <% if (alertMessage != null && alertType != null) { %>
-    <div class="alert alert-<%= alertType %>" role="alert">
+    <% if (alertType != null && alertMessage != null) { %>
+    <div class="alert alert-<%= alertType %>">
         <%= alertMessage %>
     </div>
     <% } %>
 
-    <% if (dataList != null && !dataList.isEmpty()) { %>
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered shadow-sm">
-            <thead class="table-header">
+    <% if (cartList.isEmpty()) { %>
+    <p class="text-center mt-4">Your cart is empty. <a href="${pageContext.request.contextPath}/homeProduct">Start shopping!</a></p>
+    <% } else { %>
+    <form action="CheckoutServlet" method="get">
+        <table class="table table-bordered table-hover mt-4">
+            <thead class="table-light">
             <tr>
-                <th>#</th>
-                <th>Category</th>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
                 <th>Actions</th>
             </tr>
             </thead>
             <tbody>
-            <% for (CategoryDTO categoryDTO : dataList) { %>
+            <% double totalAmount = 0.0; %>
+            <% for (CartDTO cart : cartList) {
+                double productTotal = cart.getProduct().getPrice() * cart.getQuantity();
+                totalAmount += productTotal;
+            %>
             <tr>
-                <td><%= categoryDTO.getCategoryId() %></td>
-                <td><%= categoryDTO.getName() %></td>
+                <td><%= cart.getProduct().getName() %></td>
+                <td>$<%= cart.getProduct().getPrice() %></td>
+                <td><%= cart.getQuantity() %></td>
+                <td>$<%= productTotal %></td>
                 <td>
-                    <button class="btn btn-warning btn-sm btn-custom" onclick="editCategory(<%= categoryDTO.getCategoryId() %>, '<%= categoryDTO.getName() %>')">
-                        <i class="bi bi-pencil"></i> Edit
-                    </button>
-                    <button class="btn btn-danger btn-sm btn-custom" onclick="deleteCategory(<%= categoryDTO.getCategoryId() %>)">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
+                    <form action="RemoveFromCartServlet" method="post">
+                        <input type="hidden" name="cartId" value="<%= cart.getCartId() %>">
+                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                    </form>
                 </td>
             </tr>
             <% } %>
             </tbody>
         </table>
-    </div>
-    <% } else { %>
-    <p class="text-center text-muted">No categories found.</p>
+<div class="text-right">
+            <form action="CheckoutServletButton" method="post">
+                <h4>Total: $<%= totalAmount %></h4>
+                <input type="hidden" name="total" value="<%= totalAmount %>">
+                <button type="submit" class="btn btn-primary">Proceed to Checkout</button>
+            </form>
+        </div>
+    </form>
     <% } %>
-
 </div>
 
-<script>
-    Swal.fire({
-        icon: '<%= alertType %>',
-        title: '<%= alertMessage %>',
-        showConfirmButton: false,
-        timer: 2000
-    });
-</script>
-<%
-    }
-%>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const alertType = '<%= alertType != null ? alertType : "" %>';
+    const alertMessage = '<%= alertMessage != null ? alertMessage.replace("'", "\\'") : "" %>';
+
+    if (alertType && alertMessage) {
+        Swal.fire({
+            icon: alertType, // Expected types: 'success', 'error', 'warning', 'info', 'question'
+            title: alertType.charAt(0).toUpperCase() + alertType.slice(1),
+            text: alertMessage,
+            confirmButtonText: 'OK'
+        }).then(() => {
+            // Redirect if the alertType is 'success' (optional)
+            if (alertType === 'success') {
+                window.location.href = '<%= request.getContextPath() %>/homeProduct'; // Redirect after success
+            }
+        });
+    }
+</script>
 
 </body>
 </html>

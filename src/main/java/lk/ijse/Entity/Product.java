@@ -1,36 +1,40 @@
 package lk.ijse.Entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.*;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "products")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-@Entity
 @Getter
 @Setter
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int productId;
-    private String productName;
-    private int categoryId;
-    private double price;
+    private String name;
+    private Double price;
+    private String description;
     private int quantity;
+    private String imagePath;
 
-    /*public Product() {}
 
-    public Product(int productId, String productName, int categoryId, double price, int quantity) {
-        this.productId = productId;
-        this.productName = productName;
-        this.categoryId = categoryId;
-        this.price = price;
-        this.quantity = quantity;
-    }*/
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
-    // Getters and Setters
-    // ...
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderDetail> orderDetails = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Cart> cartItems = new ArrayList<>();
+
+    // Getters and setters
 }
